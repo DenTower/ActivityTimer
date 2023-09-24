@@ -82,7 +82,9 @@ fun ListItem(
                 },
                 dismissContent = {
 
-                    Row(modifier = Modifier.fillMaxWidth(),
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
