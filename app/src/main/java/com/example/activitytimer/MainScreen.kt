@@ -23,16 +23,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+@Preview
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     mainViewModel: MainViewModel = viewModel(factory = MainViewModel.factory)
 ) {
     val itemsList = mainViewModel.itemsList.collectAsState(initial = emptyList())
-    Log.d("1111", "1111")
     Column(
         modifier = Modifier
             .fillMaxSize()
