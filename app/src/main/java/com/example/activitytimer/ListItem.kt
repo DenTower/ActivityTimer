@@ -33,7 +33,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import com.example.activitytimer.data.Entity
 import com.example.activitytimer.ui.theme.grayBack
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -64,25 +62,28 @@ fun ListItem(
                     removed = true
                     true
                 }
+
                 DismissValue.DismissedToStart -> {
                     onSwipeToStart(item)
                     false
                 }
+
                 else -> false
             }
         }
     )
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(corner = CornerSize(16.dp))
 
+    AnimatedVisibility(
+        show, exit = fadeOut(spring())
     ) {
-        AnimatedVisibility(
-            show, exit = fadeOut(spring())
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            shape = RoundedCornerShape(corner = CornerSize(16.dp))
+
         ) {
             SwipeToDismiss(
                 state = dismissState,
@@ -122,10 +123,9 @@ fun ListItem(
 
         LaunchedEffect(removed) {
             if(removed) {
-                    delay(1000)
-                    onRemove(item)
-                    Toast.makeText(context, "Removed ${item.id.toString()}", Toast.LENGTH_SHORT).show()
-                }
+                delay(300)
+                onRemove(item)
+            }
         }
     }
 }
