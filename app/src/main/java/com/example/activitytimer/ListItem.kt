@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,51 +27,62 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import com.example.activitytimer.data.Entity
+import com.example.activitytimer.ui.theme.grayBack
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ListItem(
-    item: Entity
+    item: Entity,
+    mainViewModel: MainViewModel,
+    onSwipeToStart: (Entity) -> Unit,
+    onRemove: (Entity) -> Unit
 ) {
     val context = LocalContext.current
     var show by remember { mutableStateOf(true) }
+    var removed by remember { mutableStateOf(false) }
     val dismissState = rememberDismissState(
         confirmStateChange = {
-            if (it == DismissValue.DismissedToStart || it == DismissValue.DismissedToEnd) {
-                show = false
-                true
-            } else false
+            when(it) {
+                DismissValue.DismissedToEnd -> {
+                    show = false
+                    removed = true
+                    true
+                }
+                DismissValue.DismissedToStart -> {
+                    onSwipeToStart(item)
+                    false
+                }
+                else -> false
+            }
         }
     )
 
-    Card(modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp),
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(corner = CornerSize(16.dp))
 
-        ) {
+    ) {
         AnimatedVisibility(
-            show,exit = fadeOut(spring())
+            show, exit = fadeOut(spring())
         ) {
             SwipeToDismiss(
                 state = dismissState,
@@ -82,37 +92,40 @@ fun ListItem(
                 },
                 dismissContent = {
 
-                    Row(modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White),
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(grayBack),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            item.name,
+                            item.id.toString(),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
                                 .padding(10.dp)
                         )
+
                         IconButton(
                             onClick = {
                                 /*TODO*/
                             }) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "Start")
+                                contentDescription = "Start"
+                            )
                         }
                     }
-
                 }
             )
         }
-        LaunchedEffect(show) {
-            if (!show) {
-                delay(800)
-                // remove func
-                Toast.makeText(context, "Removed", Toast.LENGTH_SHORT).show()
-            }
+
+        LaunchedEffect(removed) {
+            if(removed) {
+                    delay(1000)
+                    onRemove(item)
+                    Toast.makeText(context, "Removed ${item.id.toString()}", Toast.LENGTH_SHORT).show()
+                }
         }
     }
 }
@@ -120,9 +133,9 @@ fun ListItem(
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DismissBackground(dismissState: DismissState) {
-    val color = when (dismissState.dismissDirection) {
-        DismissDirection.StartToEnd -> Color(0xFFFF1744)
-        DismissDirection.EndToStart -> Color(0xFF1DE9B6)
+    val color = when(dismissState.dismissDirection) {
+        DismissDirection.StartToEnd -> Color(0xFF940909)
+        DismissDirection.EndToStart -> Color(0xFF097016)
         null -> Color.Transparent
     }
     val direction = dismissState.dismissDirection
@@ -135,14 +148,19 @@ fun DismissBackground(dismissState: DismissState) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        if (direction == DismissDirection.StartToEnd) Icon(
-            Icons.Default.Delete,
-            contentDescription = "delete"
-        )
+        if(direction == DismissDirection.StartToEnd) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = "Delete"
+            )
+        }
+
         Spacer(modifier = Modifier)
-        if (direction == DismissDirection.EndToStart) Icon(
+
+        if(direction == DismissDirection.EndToStart) Icon(
             Icons.Default.Edit,
             contentDescription = "Edit"
+
         )
     }
 }
