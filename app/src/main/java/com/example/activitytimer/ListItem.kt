@@ -59,7 +59,6 @@ fun ListItem(
             when(it) {
                 DismissValue.DismissedToEnd -> {
                     show = false
-                    removed = true
                     true
                 }
 
@@ -120,12 +119,13 @@ fun ListItem(
                 }
             )
         }
+    }
 
-        LaunchedEffect(removed) {
-            if(removed) {
-                delay(300)
-                onRemove(item)
-            }
+    LaunchedEffect(show) {
+        if(!show) {
+            delay(300)
+            onRemove(item)
+            Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
         }
     }
 }
