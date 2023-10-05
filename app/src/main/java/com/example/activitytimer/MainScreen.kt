@@ -2,10 +2,14 @@ package com.example.activitytimer
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -18,29 +22,46 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.activitytimer.ui.theme.grayBack
 import com.example.activitytimer.ui.theme.light
 
-@Preview
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
+    ExperimentalComposeUiApi::class
+)
 @Composable
 fun MainScreen(
     mainViewModel: MainViewModel = viewModel(factory = MainViewModel.factory)
 ) {
     val itemsList = mainViewModel.itemsList.collectAsState(initial = emptyList())
-    var addIconChange by remember {
-        mutableStateOf(false)
-    }
+    var addIconChange by remember { mutableStateOf(false) }
+
+    val focusManager = LocalFocusManager.current
+    val inputNameFocusRequester = remember { FocusRequester() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            }
     ) {
         Row(
             modifier = Modifier
@@ -49,16 +70,18 @@ fun MainScreen(
         ) {
             TextField(
                 value = mainViewModel.newName.value,
-                onValueChange = { text ->
+                onValueChange = {text ->
                     mainViewModel.newName.value = text
                 },
                 label = {
-                    Text(text = "ActivityName...")
+                    Text(text = "Activity name...")
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(inputNameFocusRequester),
                 colors = TextFieldDefaults.textFieldColors(
                     containerColor = Color.Black
-                )
+                ),
             )
 
             Row(
@@ -99,6 +122,7 @@ fun MainScreen(
                     mainViewModel.nameEntity = it
                     mainViewModel.newName.value = it.name
                     addIconChange = true
+                    inputNameFocusRequester.requestFocus()
                 },
                     {
                         mainViewModel.deleteItem(it)
