@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ActivityTimer</string>
+    <string name="stop_timer_message">Stop previous timer</string>
 </resources>
