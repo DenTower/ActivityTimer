@@ -1,5 +1,6 @@
 package com.example.activitytimer
 
+import android.content.Context
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -44,7 +45,7 @@ class MainViewModel(val dataBase: MainDb) : ViewModel() {
         dataBase.dao.deleteItem(item)
     }
 
-    fun startTimer(item: Entity) {
+    fun startTimer(item: Entity, context: Context) {
         timerState.tryEmit(timerState.value.copy(item.time,true, item.id))
         CoroutineScope(Dispatchers.IO).launch {
             while (timerState.value.isTimerRunning) {
@@ -52,8 +53,16 @@ class MainViewModel(val dataBase: MainDb) : ViewModel() {
                     timerState.tryEmit(
                         timerState.value.copy(currentTime = timerState.value.currentTime + 1L)
                     )
+                    val timerNotification = Notification(
+                        context,
+                        "Activity is going",
+                        "${item.name}: ${formatTime(timerState.value.currentTime)}"
+                    )
                     entity = item
                     updateItemTime()
+
+                    timerNotification.fireNotify()
+
                 }
                 delay(1000)
             }
