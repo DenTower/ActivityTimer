@@ -9,5 +9,7 @@ data class Entity(
     @PrimaryKey(autoGenerate = true)
     val id: Int? = null,
     val name: String,
-    val time: Long = 0L
+    val time: Long = 0L,
+    @ColumnInfo(defaultValue = "false")
+    val isRunning: Boolean
 )

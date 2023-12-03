@@ -1,7 +1,9 @@
 package com.example.activitytimer
 
-import android.content.Context
+import android.app.Application
+import android.content.Intent
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -9,80 +11,77 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.activitytimer.data.Entity
 import com.example.activitytimer.data.MainDb
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.example.activitytimer.time.TimerService
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-class MainViewModel(val dataBase: MainDb) : ViewModel() {
+class MainViewModel(val dataBase: MainDb, application: Application) : AndroidViewModel(application) {
     val itemsList = dataBase.dao.getAllItems()
+    val timersCount = dataBase.dao.getTimersCount()
     val newName = mutableStateOf("")
     var entity: Entity? = null
-
-    val timerState = MutableStateFlow<Timer>(Timer())
+    val app = application
 
     fun insertItem() = viewModelScope.launch {
         val item = entity?.copy(name = newName.value)
-            ?: Entity(name = newName.value)
+            ?: Entity(name = newName.value, isRunning = false)
         dataBase.dao.insertItem(item)
         entity = null
         newName.value = ""
-    }
-
-    fun updateItemTime() = viewModelScope.launch {
-        val item = entity?.copy(
-            time = timerState.value.currentTime
-        )
-        if(item != null) {
-            dataBase.dao.insertItem(item)
-        }
-        entity = null
     }
 
     fun deleteItem(item: Entity) = viewModelScope.launch {
         dataBase.dao.deleteItem(item)
     }
 
-    fun startTimer(item: Entity, context: Context) {
-        timerState.tryEmit(timerState.value.copy(item.time,true, item.id))
-        CoroutineScope(Dispatchers.IO).launch {
-            while (timerState.value.isTimerRunning) {
-                withContext(Dispatchers.Main) {
-                    timerState.tryEmit(
-                        timerState.value.copy(currentTime = timerState.value.currentTime + 1L)
-                    )
-                    val timerNotification = Notification(
-                        context,
-                        "Activity is going",
-                        "${item.name}: ${formatTime(timerState.value.currentTime)}"
-                    )
-                    entity = item
-                    updateItemTime()
-
-                    timerNotification.fireNotify()
-
-                }
-                delay(1000)
+    fun startTimer(item: Entity) {
+        Intent(
+            app,
+            TimerService::class.java
+        ).also {
+            it.apply {
+                action = TimerService.Actions.START.toString()
+                putExtra("ItemId", item.id)
+                putExtra("ItemName", item.name)
+                putExtra("ItemTime", item.time)
+                putExtra("ItemIsRunning", true)
             }
+            app.startService(it)
         }
+        changeTimerRunning(item)
     }
 
-    fun stopTimer() {
-        timerState.tryEmit(timerState.value.copy(isTimerRunning = false))
-        timerState.value = Timer()
+    fun stopTimer(item: Entity) {
+        Intent(
+            app,
+            TimerService::class.java
+        ).also {
+            it.apply {
+                action = TimerService.Actions.STOP.toString()
+                putExtra("ItemId", item.id)
+                putExtra("ItemName", item.name)
+                putExtra("ItemTime", item.time)
+                putExtra("ItemIsRunning", false)
+            }
+            app.startService(it)
+        }
+        changeTimerRunning(item)
     }
 
-
+    private fun changeTimerRunning(item: Entity) = viewModelScope.launch {
+        val changedItem = item.copy(
+            isRunning = !item.isRunning
+        )
+        dataBase.dao.insertItem(changedItem)
+    }
     companion object{
         val factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory{
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(
                 modelClass: Class<T>,
                 extras: CreationExtras): T {
-                val dataBase = (checkNotNull(extras[APPLICATION_KEY]) as App).database
-                return MainViewModel(dataBase) as T
+                val application = (checkNotNull(extras[APPLICATION_KEY]) as App)
+                val dataBase = application.database
+                return MainViewModel(dataBase, application) as T
             }
         }
     }

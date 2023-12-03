@@ -10,17 +10,26 @@ import androidx.room.RoomDatabase
     entities = [
         Entity::class
     ],
-    version = 1
+    version = 2,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2)
+    ]
 )
 abstract class MainDb : RoomDatabase() {
     abstract val dao: DataAccessObject
-    companion object{
-        fun createDataBase(context: Context): MainDb{
-            return Room.databaseBuilder(
-                context,
-                MainDb::class.java,
-                "activity.db"
-            ).build()
+
+    companion object {
+        private var INSTANCE: MainDb? = null
+        fun getInstance(context: Context): MainDb {
+            if(INSTANCE == null) {
+                INSTANCE = Room.databaseBuilder(
+                    context,
+                    MainDb::class.java,
+                    "activity.db"
+                ).build()
+            }
+            return INSTANCE as MainDb
+
         }
     }
 }

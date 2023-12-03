@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.activitytimer.data.Entity
+import com.example.activitytimer.time.formatTime
 import com.example.activitytimer.ui.theme.grayBack
 import kotlinx.coroutines.delay
 
@@ -51,11 +52,11 @@ fun ListItem(
     item: Entity,
     viewModel: MainViewModel,
     onSwipeToStart: (Entity) -> Unit,
-    onRemove: (Entity) -> Unit
+    onRemove: (Entity) -> Boolean
 ) {
-    val context = LocalContext.current
 
-    val timerState = viewModel.timerState.collectAsState()
+    val context = LocalContext.current
+    val timersCount = viewModel.timersCount.collectAsState(initial = 0)
 
     var show by remember { mutableStateOf(true) }
     val dismissState = rememberDismissState(
@@ -63,7 +64,7 @@ fun ListItem(
             when(it) {
                 DismissValue.DismissedToEnd -> {
                     show = false
-                    true
+                    show
                 }
 
                 DismissValue.DismissedToStart -> {
@@ -75,7 +76,6 @@ fun ListItem(
             }
         }
     )
-
 
     AnimatedVisibility(
         show, exit = fadeOut(spring())
@@ -115,9 +115,9 @@ fun ListItem(
 
                         IconButton(
                             onClick = {
-                                if(timerState.value.isTimerRunning) {
-                                    if(timerState.value.itemId == item.id) {
-                                        viewModel.stopTimer()
+                                if(timersCount.value > 0) {
+                                    if(item.isRunning) {
+                                        viewModel.stopTimer(item)
                                     } else {
                                         Toast.makeText(
                                             context,
@@ -125,14 +125,14 @@ fun ListItem(
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
+
                                 } else {
-                                    viewModel.startTimer(item, context)
+                                    viewModel.startTimer(item)
                                 }
                             }) {
                             Icon(
                                 imageVector =
-                                if(timerState.value.isTimerRunning &&
-                                    timerState.value.itemId == item.id)
+                                if(item.isRunning)
                                     Icons.Default.Pause else Icons.Default.PlayArrow,
                                 contentDescription = "Start"
                             )
@@ -146,8 +146,7 @@ fun ListItem(
     LaunchedEffect(show) {
         if(!show) {
             delay(300)
-            onRemove(item)
-            Toast.makeText(context, "Item removed", Toast.LENGTH_SHORT).show()
+            show = onRemove(item)
         }
     }
 
@@ -174,7 +173,7 @@ fun DismissBackground(dismissState: DismissState) {
         if(direction == DismissDirection.StartToEnd) {
             Icon(
                 Icons.Default.Delete,
-                contentDescription = "Delete"
+                contentDescription = "DeleteItem"
             )
         }
 
@@ -182,20 +181,8 @@ fun DismissBackground(dismissState: DismissState) {
 
         if(direction == DismissDirection.EndToStart) Icon(
             Icons.Default.Edit,
-            contentDescription = "Edit"
+            contentDescription = "EditItem"
 
         )
     }
 }
-
-fun formatTime(totalSeconds: Long): String {
-    val hours = totalSeconds / 3600L
-    val minutes = (totalSeconds % 3600L) / 60L
-    val seconds = totalSeconds % 60L
-
-    val timeString = String.format("%02d:%02d:%02d", hours, minutes, seconds)
-
-    return timeString
-}
-
-
