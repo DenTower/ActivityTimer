@@ -1,11 +1,13 @@
 package com.example.activitytimer.time
 
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.example.activitytimer.MainActivity
 import com.example.activitytimer.R
 import com.example.activitytimer.data.Entity
 import kotlinx.coroutines.CoroutineScope
@@ -40,10 +42,21 @@ class TimerService: Service() {
     }
 
     private fun start() {
+        val openIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val openPendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            openIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
         val timerNotification = NotificationCompat.Builder(this, "timer_channel")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("Activity: ${timer.activityName}")
             .setContentText("Time: null")
+            .setContentIntent(openPendingIntent)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
