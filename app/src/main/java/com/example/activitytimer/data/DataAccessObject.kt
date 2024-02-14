@@ -14,7 +14,7 @@ interface DataAccessObject {
     @Delete
     suspend fun deleteItem(entity: Entity)
     @Query("SELECT * FROM activities")
-    fun getAllItems(): Flow<List<Entity>>
+    fun getAllActivities(): Flow<List<Entity>>
     @Query("SELECT sum(isRunning) FROM activities")
     fun getTimersCount(): Flow<Int>
 }

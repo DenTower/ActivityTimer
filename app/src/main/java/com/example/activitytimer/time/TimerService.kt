@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.activitytimer.MainActivity
 import com.example.activitytimer.R
@@ -20,9 +21,21 @@ import kotlinx.coroutines.flow.onEach
 class TimerService: Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private lateinit var timer: Timer
-    override fun onBind(p0: Intent?): IBinder? {
-        return null
+    lateinit var timer: Timer
+    private lateinit var item: Entity
+    private lateinit var binder: TimerBinder
+    override fun onCreate() {
+        super.onCreate()
+        binder = TimerBinder()
+    }
+
+    override fun onBind(p0: Intent?): IBinder {
+        Log.d("myLogs", "TimerService: onBind ")
+        return binder
+    }
+
+    inner class TimerBinder: android.os.Binder() {
+        fun getService(): TimerService = this@TimerService
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
@@ -31,17 +44,22 @@ class TimerService: Service() {
         val itemTime = intent.getLongExtra("ItemTime", 0L)
         val itemIsRunning = intent.getBooleanExtra("ItemIsRunning", false)
 
-        val item = Entity(itemId, itemName!!, itemTime, itemIsRunning)
+        item = Entity(itemId, itemName ?: "NameError", itemTime, itemIsRunning)
         timer = Timer(application, item)
 
         when(intent.action) {
             Actions.START.toString() -> start()
-            Actions.STOP.toString() -> stopSelf()
+            Actions.STOP.toString() -> stop()
         }
         return super.onStartCommand(intent, flags, startId)
     }
 
+
     private fun start() {
+        Log.d("myLogs", "TimerService: start")
+        Log.d("myLogs", "TimerService: binder = $binder")
+
+
         val openIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -52,11 +70,22 @@ class TimerService: Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
+        val pauseIntent = Intent(this, TimerPauseReceiver::class.java).apply {
+            action = "PAUSE"
+        }
+        val pausePendingIntent = PendingIntent.getBroadcast(
+            this,
+            0,
+            pauseIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val timerNotification = NotificationCompat.Builder(this, "timer_channel")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Activity: ${timer.activityName}")
+            .setContentTitle("Activity: ${timer.activity.name}")
             .setContentText("Time: null")
             .setContentIntent(openPendingIntent)
+            .addAction(R.drawable.ic_launcher_foreground, "pause", pausePendingIntent)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -73,9 +102,21 @@ class TimerService: Service() {
         startForeground(1, timerNotification.build())
     }
 
+    fun stopTimer() {
+        Log.d("myLogs", "TimerService: stopTimer")
+        timer.stop().launchIn(CoroutineScope(Dispatchers.Main))
+    }
+
+    private fun stop() {
+        Log.d("myLogs", "TimerService: stop")
+        stopTimer()
+        stopSelf()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
+        Log.d("myLogs", "TimerService: destroy")
     }
 
     enum class Actions {

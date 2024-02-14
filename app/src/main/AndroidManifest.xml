@@ -27,6 +27,7 @@
             </intent-filter>
         </activity>
         <service android:name=".time.TimerService" />
+        <receiver android:name=".time.TimerPauseReceiver" />
     </application>
 
 </manifest>

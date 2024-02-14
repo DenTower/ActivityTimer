@@ -15,7 +15,7 @@ import com.example.activitytimer.time.TimerService
 import kotlinx.coroutines.launch
 
 class MainViewModel(val dataBase: MainDb, application: Application) : AndroidViewModel(application) {
-    val itemsList = dataBase.dao.getAllItems()
+    val itemsList = dataBase.dao.getAllActivities()
     val timersCount = dataBase.dao.getTimersCount()
     val newName = mutableStateOf("")
     var entity: Entity? = null
@@ -60,11 +60,10 @@ class MainViewModel(val dataBase: MainDb, application: Application) : AndroidVie
                 putExtra("ItemId", item.id)
                 putExtra("ItemName", item.name)
                 putExtra("ItemTime", item.time)
-                putExtra("ItemIsRunning", false)
+                putExtra("ItemIsRunning", item.isRunning)
             }
             app.startService(it)
         }
-        changeTimerRunning(item)
     }
 
     private fun changeTimerRunning(item: Entity) = viewModelScope.launch {
