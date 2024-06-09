@@ -1,7 +1,6 @@
 package com.example.activitytimer.data
 
 import android.content.Context
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -10,10 +9,7 @@ import androidx.room.RoomDatabase
     entities = [
         Entity::class
     ],
-    version = 2,
-    autoMigrations = [
-        AutoMigration(from = 1, to = 2)
-    ]
+    version = 1
 )
 abstract class MainDb : RoomDatabase() {
     abstract val dao: DataAccessObject
