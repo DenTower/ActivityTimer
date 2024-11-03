@@ -64,7 +64,7 @@ fun ListItem(
             when(it) {
                 DismissValue.DismissedToEnd -> {
                     show = false
-                    show
+                    false
                 }
 
                 DismissValue.DismissedToStart -> {

@@ -63,6 +63,7 @@ dependencies {
 
     // room
     implementation("androidx.room:room-ktx:2.5.2")
+    implementation("androidx.core:core-ktx:+")
     kapt("androidx.room:room-compiler:2.5.2")
 
     // view model

@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.onEach
 class TimerService: Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    lateinit var timer: Timer
+    private lateinit var timer: Timer
     private lateinit var item: Entity
     private lateinit var binder: TimerBinder
     override fun onCreate() {
@@ -82,7 +82,7 @@ class TimerService: Service() {
 
         val timerNotification = NotificationCompat.Builder(this, "timer_channel")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Activity: ${timer.activity.name}")
+            .setContentTitle(timer.activity.name)
             .setContentText("Time: null")
             .setContentIntent(openPendingIntent)
             .addAction(R.drawable.ic_launcher_foreground, "pause", pausePendingIntent)

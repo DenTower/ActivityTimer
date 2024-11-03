@@ -14,12 +14,12 @@ import com.example.activitytimer.data.MainDb
 import com.example.activitytimer.time.TimerService
 import kotlinx.coroutines.launch
 
-class MainViewModel(val dataBase: MainDb, application: Application) : AndroidViewModel(application) {
+class MainViewModel(private val dataBase: MainDb, application: Application) : AndroidViewModel(application) {
     val itemsList = dataBase.dao.getAllActivities()
     val timersCount = dataBase.dao.getTimersCount()
     val newName = mutableStateOf("")
     var entity: Entity? = null
-    val app = application
+    private val app = application
 
     fun insertItem() = viewModelScope.launch {
         val item = entity?.copy(name = newName.value)

@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.flow
 class Timer(private val appContext: Context, val activity: Entity) {
 
     private val database by lazy { MainDb.getInstance(appContext) }
-    var currentTime = activity.time
+    private var currentTime = activity.time
     fun start(interval: Long): Flow<String> {
         return flow {
             while(true) {
