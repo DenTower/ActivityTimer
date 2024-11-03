@@ -77,10 +77,11 @@ class TimerService: Service() {
             this,
             0,
             pauseIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE
         )
 
         val timerNotification = NotificationCompat.Builder(this, "timer_channel")
+            .setSilent(true)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(timer.activity.name)
             .setContentText("Time: null")
